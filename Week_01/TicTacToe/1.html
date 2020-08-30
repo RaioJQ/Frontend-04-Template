@@ -2,9 +2,200 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>$Title$</title>
+    <title>Title</title>
+    <style>
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: green;
+            display: inline-block;
+            border: solid 1px white;
+            vertical-align: middle;
+            line-height: 100px;
+            font-size: 50px;
+            text-align: center;
+            color: purple;
+        }
+    </style>
 </head>
 <body>
-$END$
+    <div id="board"></div>
+    <script>
+        let pattern = [
+            0, 0, 0,
+            0, 0, 0,
+            0, 0, 0
+        ]
+        let color = Math.round(Math.random()) * 2 - 1;
+
+        function show(pattern) {
+            let board = document.getElementById("board");
+            board.innerHTML = "";
+            for (let i = 0;i < 3;i++){
+                for (let j = 0;j < 3;j++){
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.innerText = pattern[i * 3 + j] == -1 ? "X" :
+                        pattern[i * 3 + j] == 1 ? "Q" : "";
+                    cell.addEventListener("click", () => move(i, j));
+                    board.appendChild(cell);
+                }
+                board.appendChild(document.createElement(("br")));
+            }
+        }
+
+        function move(x, y) {
+            if (pattern[x * 3 + y]){
+                return;
+            }
+            pattern[x * 3 + y] = color;
+            show(pattern);
+            if(check(pattern, color, x, y)){
+                alert((color == -1 ? "X" : "Q") + " is winner!");
+                return;
+            }
+            color = -color;
+            if (willWin(pattern, color)){
+                console.log((color == -1 ? "X" : "Q") + " will win!");
+            }
+            if (color == -1 && pattern.includes(0)){
+                move(...bestChoice(pattern,color).pos);
+            }
+        }
+
+        function check(pattern, color, x, y) {
+            let win = true;
+            for (let i = 0;i < 3;i++){
+                if(pattern[x * 3 + i] != color){
+                    win = false;
+                    break;
+                }
+            }
+            if (win){
+                return true;
+            }
+            win = true;
+            for (let i = 0;i < 3;i++){
+                if(pattern[i * 3 + y] != color){
+                    win = false;
+                    break;
+                }
+            }
+            if(win){
+                return true;
+            }
+            if (x == y){
+                win = true;
+                for (let i = 0;i < 3;i++){
+                    if(pattern[4 * i] != color){
+                        win = false;
+                        break;
+                    }
+                }
+                if (win){
+                    return true;
+                }
+            }
+            if (x == 2 - y){
+                win = true;
+                for (let i = 0; i < 3;i++){
+                    if(pattern[2 * i + 2] != color){
+                        win = false;
+                        break;
+                    }
+                }
+            }
+            return win;
+        }
+
+        function clonePattern(pattern) {
+            return Object.create(pattern);
+        }
+
+        function willWin(pattern, color) {
+            for (let i = 0;i < 3;i++){
+                for (let j = 0;j < 3;j++){
+                    if(pattern[i * 3 + j]){
+                        continue;
+                    }
+                    let tmp = clonePattern(pattern);
+                    tmp[i * 3 + j] = color;
+                    if(check(tmp, color, i, j)){
+                        return [i, j];
+                    }
+                }
+            }
+            return null;
+        }
+
+        function bestChoice(pattern, color) {
+            let pos = willWin(pattern, color);
+            if (pos){
+                return {
+                    pos: pos,
+                    res: color
+                }
+            }
+            let resWin = [];
+            let resTie = [];
+            let resLose = [];
+            for (let i = 0;i < 3;i++){
+                for (let j = 0;j < 3;j++){
+                    if(!pattern[i * 3 + j]) {
+                        let tmpPattern = clonePattern(pattern);
+                        tmpPattern[i * 3 + j] = color;
+                        if (!tmpPattern.includes(0)){
+                           return {
+                               pos: [i, j],
+                               res: 0
+                           }
+                        }
+                        let result = bestChoice(tmpPattern, -color);
+                        if (result.res == color) {
+                            resWin.push([i, j]);
+                        }
+                        else if(result.res == 0) {
+                            resTie.push([i, j]);
+                        }
+                        else {
+                            resLose.push([i ,j]);
+                        }
+                    }
+                }
+            }
+            if (resWin.length){
+                return {
+                    pos: resWin[parseInt(Math.random() * resWin.length)],
+                    res: color
+                };
+            }
+            else if (resTie.length){
+                return {
+                    pos: resTie[parseInt(Math.random() * resTie.length)],
+                    res: 0
+                };
+            }
+            else if (resLose.length){
+                return {
+                    pos: resLose[parseInt(Math.random() * resLose.length)],
+                    res: -color
+                }
+            }
+            else {
+                return {
+                    pos: null,
+                    res: 0
+                }
+            }
+
+        }
+
+        if(color == 1) {
+            show(pattern);
+        }
+        else {
+            move(...bestChoice(pattern, color).pos);
+        }
+    </script>
 </body>
 </html>
